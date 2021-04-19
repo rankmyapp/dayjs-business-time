@@ -1,6 +1,6 @@
 {
   "name": "dayjs-business-time",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "Alexsander Lira",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
@@ -14,7 +14,8 @@
     "business days",
     "working time",
     "working hours",
-    "working days"
+    "working days",
+    "rankmyapp"
   ],
   "repository": {
     "type": "git",
