@@ -1,24 +1,22 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Business Minutes Diff', () => {
   beforeAll(() => {
     dayjs.extend(businessTime);
 
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
 
     // Setting wednesday working hours for 2 segments
     //   with 3 and 5 hours respectively
     const businessHours = dayjs.getBusinessTime();
-    businessHours.wednesday = [{ start: '09:00:00', end: '12:00:00' }, { start: '13:00:00', end: '18:00:00' }];
+    businessHours.wednesday = [
+      { start: '09:00:00', end: '12:00:00' },
+      { start: '13:00:00', end: '18:00:00' },
+    ];
   });
-
 
   it('should get the 30 business minutes diff between 2 times', () => {
     const start = dayjs('2021-02-08 09:00:00');
@@ -29,7 +27,6 @@ describe('Business Minutes Diff', () => {
     expect(diff).toBeDefined();
     expect(diff).toBe(30);
   });
-
 
   it('should get the 90 business minutes diff between 2 times in different days', () => {
     const start = dayjs('2021-02-08 16:45:00');
@@ -80,4 +77,24 @@ describe('Business Minutes Diff', () => {
     expect(diff).toBeDefined();
     expect(diff).toBe(300);
   });
-})
+
+  it('should get the 8760 business minutes diff between 2 times with a long month', () => {
+    const start = dayjs('2021-01-01 14:00:00');
+    const end = dayjs('2021-01-29 11:00:00');
+
+    const diff = start.businessMinutesDiff(end);
+
+    expect(diff).toBeDefined();
+    expect(diff).toBe(8760);
+  });
+
+  it('should get the 123480 business minutes diff between 2 times with a long year', () => {
+    const start = dayjs('2021-01-01 14:00:00');
+    const end = dayjs('2021-12-31 11:00:00');
+
+    const diff = start.businessMinutesDiff(end);
+
+    expect(diff).toBeDefined();
+    expect(diff).toBe(123480);
+  });
+});
