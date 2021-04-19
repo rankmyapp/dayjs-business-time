@@ -2,7 +2,12 @@ import UpdateLocale from 'dayjs/plugin/updateLocale';
 import LocaleData from 'dayjs/plugin/localeData';
 import IsSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import IsSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import dayjs, { BusinessHoursMap, BusinessTimeSegment, BusinessUnitType, Dayjs } from 'dayjs';
+import dayjs, {
+  BusinessHoursMap,
+  BusinessTimeSegment,
+  BusinessUnitType,
+  Dayjs,
+} from 'dayjs';
 
 const DEFAULT_WORKING_HOURS = {
   sunday: null,
@@ -12,7 +17,7 @@ const DEFAULT_WORKING_HOURS = {
   thursday: [{ start: '09:00:00', end: '17:00:00' }],
   friday: [{ start: '09:00:00', end: '17:00:00' }],
   saturday: null,
-}
+};
 
 enum DaysNames {
   sunday = 0,
@@ -24,7 +29,11 @@ enum DaysNames {
   saturday = 6,
 }
 
-const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeof dayjs) => {
+const businessTime = (
+  option: any,
+  DayjsClass: typeof Dayjs,
+  dayjsFactory: typeof dayjs,
+) => {
   dayjsFactory.extend(LocaleData);
   dayjsFactory.extend(UpdateLocale);
   dayjsFactory.extend(IsSameOrBefore);
@@ -72,7 +81,11 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
     return isDefaultWorkingDay && !this.isHoliday();
   }
 
-  function addOrsubtractBusinessDays(date: Dayjs, numberOfDays: number, action: 'add' | 'subtract' = 'add') {
+  function addOrsubtractBusinessDays(
+    date: Dayjs,
+    numberOfDays: number,
+    action: 'add' | 'subtract' = 'add',
+  ) {
     let daysToIterate = numberOfDays;
     let day = date.clone();
 
@@ -88,11 +101,11 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
 
   function nextBusinessDay() {
     return addOrsubtractBusinessDays(this, 1);
-  };
+  }
 
   function lastBusinessDay() {
     return addOrsubtractBusinessDays(this, 1, 'subtract');
-  };
+  }
 
   function addBusinessDays(numberOfDays: number) {
     return addOrsubtractBusinessDays(this, numberOfDays);
@@ -103,7 +116,9 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
   }
 
   function timeStringToDayJS(timeString: string, date: Dayjs = dayjs()) {
-    const [hours, minutes, seconds] = <number[]>(timeString.split(':') as unknown);
+    const [hours, minutes, seconds] = <number[]>(
+      (timeString.split(':') as unknown)
+    );
     return date
       .clone()
       .hour(hours)
@@ -128,7 +143,7 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
       end = timeStringToDayJS(end, date);
       segments.push({ start, end });
       return segments;
-    }, [])
+    }, []);
   }
 
   function getCurrentBusinessTimeSegment(date) {
@@ -232,24 +247,32 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
     throw new Error('Invalid Business Time Unit');
   }
 
-  function addOrSubtractBusinessMinutes(day: Dayjs, numberOfMinutes: number, action: 'add' | 'subtract' = 'add'): Dayjs {
-    let date = (action === 'add') ? day.nextBusinessTime() : day.lastBusinessTime();
+  function addOrSubtractBusinessMinutes(
+    day: Dayjs,
+    numberOfMinutes: number,
+    action: 'add' | 'subtract' = 'add',
+  ): Dayjs {
+    let date =
+      action === 'add' ? day.nextBusinessTime() : day.lastBusinessTime();
 
     // console.log('date', numberOfMinutes, date.format('YYYY-MM-DD HH:mm:ss'));
 
     while (numberOfMinutes) {
-      const segment = getCurrentBusinessTimeSegment(date) as BusinessTimeSegment;
+      const segment = getCurrentBusinessTimeSegment(
+        date,
+      ) as BusinessTimeSegment;
 
       if (!segment) {
         // console.log('NO SEGMENT', numberOfMinutes, date.format('YYYY-MM-DD HH:mm:ss'));
-        date = (action === 'add') ? date.nextBusinessTime() : date.lastBusinessTime();
+        date =
+          action === 'add' ? date.nextBusinessTime() : date.lastBusinessTime();
         continue;
       }
 
       const { start, end } = segment;
 
-      const compareBaseDate = (action === 'add') ? end : date;
-      const compareDate = (action === 'add') ? date : start;
+      const compareBaseDate = action === 'add' ? end : date;
+      const compareDate = action === 'add' ? date : start;
 
       let timeToJump = compareBaseDate.diff(compareDate, 'minute');
 
@@ -280,7 +303,10 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
     return this.subtractBusinessMinutes(minutesToSubtract);
   }
 
-  function subtractBusinessTime(timeToSubtract: number, businessUnit: BusinessUnitType) {
+  function subtractBusinessTime(
+    timeToSubtract: number,
+    businessUnit: BusinessUnitType,
+  ) {
     if (businessUnit.match(/^(minute)+s?$/)) {
       return this.subtractBusinessMinutes(timeToSubtract);
     }
@@ -304,7 +330,7 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
     if (base.isAfter(comparator)) {
       to = base.clone();
       from = comparator.clone();
-      multiplier = -1
+      multiplier = -1;
     }
 
     if (!from.isBusinessTime()) {
@@ -315,7 +341,7 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
       to = to.lastBusinessTime();
     }
 
-    return { from, to, multiplier }
+    return { from, to, multiplier };
   }
 
   function businessDaysDiff(comparator: Dayjs): number {
@@ -334,16 +360,63 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
     let { from, to, multiplier } = fixDatesToCalculateDiff(this, comparator);
     let diff = 0;
 
-    while (from.isBefore(to)) {
-      let segments = getBusinessTimeSegments(from);
-      for (let index = 0; index < segments.length; index++) {
-        const { start, end } = segments[index];
+    const isSameDayfromTo = from.isSame(to, 'day');
+    if (isSameDayfromTo) {
+      const fromSegments = getBusinessTimeSegments(from);
+      for (const segment of fromSegments) {
+        const { start, end } = segment;
 
-        if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
-          diff += 1;
+        if (
+          to.isSameOrAfter(start) &&
+          to.isSameOrBefore(end) &&
+          from.isSameOrAfter(start) &&
+          from.isSameOrBefore(end)
+        ) {
+          diff += to.diff(from, 'minutes');
+          break;
+        } else if (to.isSameOrAfter(start) && to.isSameOrBefore(end)) {
+          diff += to.diff(start, 'minutes');
+          break;
+        } else if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
+          diff += end.diff(from, 'minutes');
+        } else {
+          diff += end.diff(start, 'minutes');
         }
       }
-      from = from.addBusinessMinutes(1);
+
+      return diff;
+    }
+
+    let segments = getBusinessTimeSegments(from);
+    for (const segment of segments) {
+      const { start, end } = segment;
+
+      if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
+        diff += end.diff(from, 'minutes');
+      } else if (start.isSameOrAfter(from)) {
+        diff += end.diff(start, 'minutes');
+      }
+    }
+
+    from = from.addBusinessDays(1);
+    while (from.isBefore(to, 'day')) {
+      segments = getBusinessTimeSegments(from);
+      for (const segment of segments) {
+        const { start, end } = segment;
+        diff += end.diff(start, 'minutes');
+      }
+
+      from = from.addBusinessDays(1);
+    }
+
+    const toSegments = getBusinessTimeSegments(to);
+    for (const segment of toSegments) {
+      const { start, end } = segment;
+      if (to.isSameOrAfter(start) && to.isSameOrBefore(end)) {
+        diff += to.diff(start, 'minutes');
+      } else if (end.isSameOrBefore(to)) {
+        diff += end.diff(start, 'minutes');
+      }
     }
 
     return diff * multiplier;
@@ -396,7 +469,7 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
   DayjsClass.prototype.businessHoursDiff = businessHoursDiff;
   DayjsClass.prototype.businessDaysDiff = businessDaysDiff;
   DayjsClass.prototype.businessTimeDiff = businessTimeDiff;
-}
+};
 
 export default businessTime;
 exports = module.exports = businessTime;
