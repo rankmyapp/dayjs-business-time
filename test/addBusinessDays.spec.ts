@@ -1,19 +1,14 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Add Business Days', () => {
   beforeAll(() => {
     dayjs.extend(businessTime);
 
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
   });
-
 
   it('should add 3 business day on a date', () => {
     const date = dayjs('2021-02-08');
@@ -39,7 +34,7 @@ describe('Add Business Days', () => {
   });
 
   it('should add 2 business days on a day before a holiday', () => {
-    // june 2nd, 2021 is a wednesday 
+    // june 2nd, 2021 is a wednesday
     //   before corpus christ holiday
     const date = dayjs('2021-06-02');
 
@@ -65,4 +60,4 @@ describe('Add Business Days', () => {
     expect(newDate).toBeDefined();
     expect(newDate).toStrictEqual(expected);
   });
-})
+});

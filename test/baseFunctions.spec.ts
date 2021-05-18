@@ -1,4 +1,4 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Base functions', () => {
@@ -10,7 +10,7 @@ describe('Base functions', () => {
     thursday: [{ start: '09:00:00', end: '17:00:00' }],
     friday: [{ start: '09:00:00', end: '17:00:00' }],
     saturday: null,
-  }
+  };
 
   beforeAll(() => {
     dayjs.extend(businessTime);
@@ -24,11 +24,7 @@ describe('Base functions', () => {
   });
 
   it('should set holidays', () => {
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
 
@@ -46,7 +42,7 @@ describe('Base functions', () => {
   });
 
   it('should set working hours', () => {
-    const businessHours = {...DEFAULT_WORKING_HOURS};
+    const businessHours = { ...DEFAULT_WORKING_HOURS };
 
     businessHours[6] = businessHours[5];
 
@@ -57,4 +53,4 @@ describe('Base functions', () => {
     expect(dayjsBusinessHours).toBeDefined();
     expect(dayjsBusinessHours).toStrictEqual(businessHours);
   });
-})
+});

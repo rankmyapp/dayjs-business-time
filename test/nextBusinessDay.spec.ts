@@ -1,19 +1,14 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Next Business Day', () => {
   beforeAll(() => {
     dayjs.extend(businessTime);
 
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
   });
-
 
   it('should get the next business day from a date', () => {
     const date = dayjs('2021-02-07');
@@ -39,7 +34,7 @@ describe('Next Business Day', () => {
   });
 
   it('should get the next business day from a day before a holiday', () => {
-    // june 2nd, 2021 is a wednesday 
+    // june 2nd, 2021 is a wednesday
     //   before corpus christ holiday
     const date = dayjs('2021-06-02');
 
@@ -65,4 +60,4 @@ describe('Next Business Day', () => {
     expect(nextBusinessDay).toBeDefined();
     expect(nextBusinessDay).toStrictEqual(expected);
   });
-})
+});
