@@ -1,24 +1,22 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Subtract Business Minutes', () => {
   beforeAll(() => {
     dayjs.extend(businessTime);
 
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
 
     // Setting wednesday working hours for 2 segments
     //   with 3 and 5 hours respectively
     const businessHours = dayjs.getBusinessTime();
-    businessHours.wednesday = [{ start: '09:00:00', end: '12:00:00' }, { start: '13:00:00', end: '18:00:00' }];
+    businessHours.wednesday = [
+      { start: '09:00:00', end: '12:00:00' },
+      { start: '13:00:00', end: '18:00:00' },
+    ];
   });
-
 
   it('should subtract 30 business minutes on a date', () => {
     const date = dayjs('2021-02-08 15:00:00');
@@ -58,7 +56,7 @@ describe('Subtract Business Minutes', () => {
     //   after corpus christ holiday
     const date = dayjs('2021-06-04 09:15:00');
 
-    // june 2nd, 2021 is a wednesday     
+    // june 2nd, 2021 is a wednesday
     const expected = dayjs('2021-06-02 17:47:00');
 
     const newDate = date.subtractBusinessMinutes(28);
@@ -80,4 +78,4 @@ describe('Subtract Business Minutes', () => {
     expect(newDate).toBeDefined();
     expect(newDate).toStrictEqual(expected);
   });
-})
+});

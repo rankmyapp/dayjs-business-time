@@ -1,19 +1,14 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Last Business Day', () => {
   beforeAll(() => {
     dayjs.extend(businessTime);
 
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
   });
-
 
   it('should get the last business day from a date', () => {
     const date = dayjs('2021-02-09');
@@ -43,7 +38,7 @@ describe('Last Business Day', () => {
     //   after corpus christ holiday
     const date = dayjs('2021-06-04');
 
-    // june 2nd, 2021 is a wednesday 
+    // june 2nd, 2021 is a wednesday
     const expected = dayjs('2021-06-02');
 
     const lastBusinessDay = date.lastBusinessDay();
@@ -65,4 +60,4 @@ describe('Last Business Day', () => {
     expect(lastBusinessDay).toBeDefined();
     expect(lastBusinessDay).toStrictEqual(expected);
   });
-})
+});

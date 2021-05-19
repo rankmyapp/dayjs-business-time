@@ -1,19 +1,14 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Holidays & Business Days', () => {
   beforeAll(() => {
     dayjs.extend(businessTime);
 
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
   });
-
 
   it('should successfully check a holiday', () => {
     // previously set as holiday
@@ -64,4 +59,4 @@ describe('Holidays & Business Days', () => {
     expect(isBusinessDay).toBeDefined();
     expect(isBusinessDay).toBe(false);
   });
-})
+});

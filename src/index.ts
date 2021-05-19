@@ -255,15 +255,12 @@ const businessTime = (
     let date =
       action === 'add' ? day.nextBusinessTime() : day.lastBusinessTime();
 
-    // console.log('date', numberOfMinutes, date.format('YYYY-MM-DD HH:mm:ss'));
-
     while (numberOfMinutes) {
       const segment = getCurrentBusinessTimeSegment(
         date,
       ) as BusinessTimeSegment;
 
       if (!segment) {
-        // console.log('NO SEGMENT', numberOfMinutes, date.format('YYYY-MM-DD HH:mm:ss'));
         date =
           action === 'add' ? date.nextBusinessTime() : date.lastBusinessTime();
         continue;
@@ -288,8 +285,6 @@ const businessTime = (
 
       date = date[action](timeToJump, 'minute');
     }
-
-    // console.log('end date', numberOfMinutes, date.format('YYYY-MM-DD HH:mm:ss'));
 
     return date;
   }
@@ -334,11 +329,11 @@ const businessTime = (
     }
 
     if (!from.isBusinessTime()) {
-      from = from.nextBusinessTime();
+      from = from.lastBusinessTime();
     }
 
     if (!to.isBusinessTime()) {
-      to = to.lastBusinessTime();
+      to = to.nextBusinessTime();
     }
 
     return { from, to, multiplier };
@@ -353,7 +348,7 @@ const businessTime = (
       from = from.addBusinessDays(1);
     }
 
-    return diff * multiplier;
+    return diff ? diff * multiplier : 0;
   }
 
   function businessMinutesDiff(comparator: Dayjs): number {
@@ -384,7 +379,7 @@ const businessTime = (
         }
       }
 
-      return diff;
+      return diff ? diff * multiplier : 0;
     }
 
     let segments = getBusinessTimeSegments(from);
@@ -419,7 +414,7 @@ const businessTime = (
       }
     }
 
-    return diff * multiplier;
+    return diff ? diff * multiplier : 0;
   }
 
   function businessHoursDiff(comparator: Dayjs): number {

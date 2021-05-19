@@ -1,28 +1,26 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Next Business Time', () => {
   beforeAll(() => {
     dayjs.extend(businessTime);
 
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
 
     // Setting wednesday working hours for 2 segments
     //   with 3 and 5 hours respectively
     const businessHours = dayjs.getBusinessTime();
-    businessHours.wednesday = [{ start: '09:00:00', end: '12:00:00' }, { start: '13:00:00', end: '18:00:00' }];
+    businessHours.wednesday = [
+      { start: '09:00:00', end: '12:00:00' },
+      { start: '13:00:00', end: '18:00:00' },
+    ];
   });
-
 
   it('should get the first business time in a business day', () => {
     const date = dayjs('2021-02-01 08:00:00');
-    const expected = dayjs('2021-02-01 09:00:00')
+    const expected = dayjs('2021-02-01 09:00:00');
 
     const nextBusinessTime = date.nextBusinessTime();
 
@@ -41,7 +39,7 @@ describe('Next Business Time', () => {
 
   it('should get the first business time in a day after a holiday', () => {
     const date = dayjs('2021-01-25 15:00:00');
-    const expected = dayjs('2021-01-26 09:00:00')
+    const expected = dayjs('2021-01-26 09:00:00');
 
     const nextBusinessTime = date.nextBusinessTime();
 
@@ -66,7 +64,6 @@ describe('Next Business Time', () => {
     // february 1st, 2021 is a monday
     const expected = dayjs('2021-02-01 09:00:00');
 
-
     const nextBusinessTime = date.nextBusinessTime();
 
     expect(nextBusinessTime).toBeDefined();
@@ -74,12 +71,12 @@ describe('Next Business Time', () => {
   });
 
   it('should get the first business time start in a day after a holiday', () => {
-    // june 2nd, 2021 is a wednesday 
+    // june 2nd, 2021 is a wednesday
     //   before corpus christ holiday
     const date = dayjs('2021-06-02 22:00:00');
 
     // june 4th, 2021 is a friday
-    const expected = dayjs('2021-06-04 09:00:00')
+    const expected = dayjs('2021-06-04 09:00:00');
 
     const nextBusinessTime = date.nextBusinessTime();
 
@@ -100,4 +97,4 @@ describe('Next Business Time', () => {
     expect(nextBusinessTime).toBeDefined();
     expect(nextBusinessTime).toStrictEqual(expected);
   });
-})
+});

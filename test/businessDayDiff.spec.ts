@@ -1,19 +1,14 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import businessTime from '../src';
 
 describe('Business Day Diff', () => {
   beforeAll(() => {
     dayjs.extend(businessTime);
 
-    const holidays = [
-      '2021-01-01',
-      '2021-01-25',
-      '2021-06-03',
-    ];
+    const holidays = ['2021-01-01', '2021-01-25', '2021-06-03'];
 
     dayjs.setHolidays(holidays);
   });
-
 
   it('should get the 2 business days diff between 2 times', () => {
     const start = dayjs('2021-02-08 09:00:00');
@@ -24,7 +19,6 @@ describe('Business Day Diff', () => {
     expect(diff).toBeDefined();
     expect(diff).toBe(2);
   });
-
 
   it('should get the 8 business days diff between 2 times in different days', () => {
     const start = dayjs('2021-02-08 16:45:00');
@@ -65,4 +59,4 @@ describe('Business Day Diff', () => {
     expect(diff).toBeDefined();
     expect(diff).toBe(2);
   });
-})
+});
