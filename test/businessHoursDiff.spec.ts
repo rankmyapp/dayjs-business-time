@@ -97,4 +97,24 @@ describe('Business Hours Diff', () => {
     expect(diff).toBeDefined();
     expect(diff).toBe(-3.5);
   });
+
+  it('should get the 1 business hour diff between 2 times in the same business hours segment in a day with 2 segments', () => {
+    const start = dayjs('2021-05-26 16:00:00');
+    const end = dayjs('2021-05-26 17:00:00');
+
+    const diff = start.businessHoursDiff(end);
+
+    expect(diff).toBeDefined();
+    expect(diff).toBe(1);
+  });
+
+  it('should get the 9.5 business hour diff between 2 times in 2 business days with a day with 2 segments', () => {
+    const start = dayjs('2021-05-25 14:30:00');
+    const end = dayjs('2021-05-26 17:00:00');
+
+    const diff = start.businessHoursDiff(end);
+
+    expect(diff).toBeDefined();
+    expect(diff).toBe(9.5);
+  });
 });
