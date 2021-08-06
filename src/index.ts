@@ -374,9 +374,7 @@ const businessTime = (
           break;
         } else if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
           diff += end.diff(from, 'minutes');
-        } else {
-          diff += end.diff(start, 'minutes');
-        }
+        } 
       }
 
       return diff ? diff * multiplier : 0;

@@ -1,6 +1,6 @@
 {
   "name": "dayjs-business-time",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "Alexsander Lira",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
