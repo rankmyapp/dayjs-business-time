@@ -1,0 +1,8 @@
+.github/
+coverage/
+test/
+src/
+dist/
+.eslintrc.js
+.prettierrc
+tsconfig.json
