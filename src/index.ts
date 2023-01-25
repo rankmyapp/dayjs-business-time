@@ -88,11 +88,18 @@ const businessTime = (
   ) {
     let daysToIterate = numberOfDays;
     let day = date.clone();
+    let internalAction = action;
+
+    if (numberOfDays < 0) {
+      if (action === 'add') internalAction = 'subtract';
+      if (action === 'subtract') internalAction = 'add';
+    }
 
     while (daysToIterate) {
-      day = day[action](1, 'day');
+      day = day[internalAction](1, 'day');
       if (day.isBusinessDay()) {
-        daysToIterate = daysToIterate - 1;
+        if (daysToIterate < 0) daysToIterate = daysToIterate + 1;
+        else daysToIterate = daysToIterate - 1;
       }
     }
 
@@ -374,7 +381,7 @@ const businessTime = (
           break;
         } else if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
           diff += end.diff(from, 'minutes');
-        } 
+        }
       }
 
       return diff ? diff * multiplier : 0;
