@@ -1,13 +1,13 @@
-import UpdateLocale from 'dayjs/plugin/updateLocale';
-import LocaleData from 'dayjs/plugin/localeData';
-import IsSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import IsSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import dayjs, {
   BusinessHoursMap,
   BusinessTimeSegment,
   BusinessUnitType,
   Dayjs,
 } from 'dayjs';
+import IsSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import IsSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import LocaleData from 'dayjs/plugin/localeData';
+import UpdateLocale from 'dayjs/plugin/updateLocale';
 
 const DEFAULT_WORKING_HOURS = {
   sunday: null,
@@ -333,7 +333,7 @@ const businessTime = (
     }
 
     if (!to.isBusinessTime()) {
-      to = to.nextBusinessTime();
+      to = to.lastBusinessTime();
     }
 
     return { from, to, multiplier };
@@ -374,7 +374,7 @@ const businessTime = (
           break;
         } else if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
           diff += end.diff(from, 'minutes');
-        } 
+        }
       }
 
       return diff ? diff * multiplier : 0;

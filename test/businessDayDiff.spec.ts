@@ -59,4 +59,14 @@ describe('Business Day Diff', () => {
     expect(diff).toBeDefined();
     expect(diff).toBe(2);
   });
+
+  it('should get the 0 business days diff between saturday and sunday', () => {
+    const start = dayjs('2023-01-28 14:00:00');
+    const end = dayjs('2023-01-29 11:00:00');
+
+    const diff = start.businessDaysDiff(end);
+
+    expect(diff).toBeDefined();
+    expect(diff).toBe(0);
+  });
 });
