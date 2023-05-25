@@ -13,19 +13,19 @@ describe('Business Time', () => {
   it('should successfully check business time in a business day', () => {
     const date = dayjs('2021-02-11 10:00:00');
 
-    const isBusinessTime = date.isBusinessTime();
+    const isBusinessTime = date.isRealBusinessTime();
 
     expect(isBusinessTime).toBeDefined();
     expect(isBusinessTime).toBe(true);
   });
 
-  it('should successfully check the last business time in a business day', () => {
+  it('should successfully check the last business time is a non business day', () => {
     const date = dayjs('2021-02-11 17:00:00');
 
-    const isBusinessTime = date.isBusinessTime();
+    const isBusinessTime = date.isRealBusinessTime();
 
     expect(isBusinessTime).toBeDefined();
-    expect(isBusinessTime).toBe(true);
+    expect(isBusinessTime).toBe(false);
   });
 
   it('should successfully check non business time is a business day', () => {

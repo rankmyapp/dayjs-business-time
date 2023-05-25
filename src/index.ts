@@ -163,6 +163,22 @@ const businessTime = (
     return !!getCurrentBusinessTimeSegment(this);
   }
 
+  /**
+   * The last business time is not included in the business time
+   */
+  function isRealBusinessTime() {
+    const businessSegments = getBusinessTimeSegments(this);
+
+    if (!businessSegments?.length) {
+      return false;
+    }
+
+    return !!businessSegments.find((businessSegment) => {
+      const { start, end } = businessSegment;
+      return this.isSameOrAfter(start) && this.isBefore(end);
+    });
+  }
+
   function nextBusinessTime() {
     if (!this.isBusinessDay()) {
       const nextBusinessDay = this.nextBusinessDay();
@@ -374,7 +390,7 @@ const businessTime = (
           break;
         } else if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
           diff += end.diff(from, 'minutes');
-        } 
+        }
       }
 
       return diff ? diff * multiplier : 0;
@@ -450,6 +466,7 @@ const businessTime = (
   DayjsClass.prototype.addBusinessDays = addBusinessDays;
   DayjsClass.prototype.subtractBusinessDays = subtractBusinessDays;
   DayjsClass.prototype.isBusinessTime = isBusinessTime;
+  DayjsClass.prototype.isRealBusinessTime = isRealBusinessTime;
   DayjsClass.prototype.nextBusinessTime = nextBusinessTime;
   DayjsClass.prototype.lastBusinessTime = lastBusinessTime;
   DayjsClass.prototype.addBusinessTime = addBusinessTime;
