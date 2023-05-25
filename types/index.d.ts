@@ -16,6 +16,7 @@ declare module 'dayjs' {
     nextBusinessDay(): Dayjs,
     lastBusinessDay(): Dayjs,
     isBusinessTime(): boolean,
+    isRealBusinessTime(): boolean,
     nextBusinessTime(): Dayjs,
     lastBusinessTime(): Dayjs,
     addBusinessDays(numberOfDays: number): Dayjs,
