@@ -164,9 +164,7 @@ const businessTime = (
   }
 
   /**
-   * 判断是否是真实的 bussinessTime
-   * Note: 工作时间段的结束时间不算在工作时间内
-   * @returns 
+   * The last business time is not included in the business time
    */
   function isRealBusinessTime() {
     const businessSegments = getBusinessTimeSegments(this);
