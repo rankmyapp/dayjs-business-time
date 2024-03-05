@@ -11,11 +11,11 @@ import dayjs, {
 
 const DEFAULT_WORKING_HOURS = {
   sunday: null,
-  monday: [{ start: '09:00:00', end: '17:00:00' }],
-  tuesday: [{ start: '09:00:00', end: '17:00:00' }],
-  wednesday: [{ start: '09:00:00', end: '17:00:00' }],
-  thursday: [{ start: '09:00:00', end: '17:00:00' }],
-  friday: [{ start: '09:00:00', end: '17:00:00' }],
+  monday: [{ start: '08:00:00', end: '17:00:00' }],
+  tuesday: [{ start: '08:00:00', end: '17:00:00' }],
+  wednesday: [{ start: '08:00:00', end: '17:00:00' }],
+  thursday: [{ start: '08:00:00', end: '17:00:00' }],
+  friday: [{ start: '08:00:00', end: '17:00:00' }],
   saturday: null,
 };
 
@@ -374,7 +374,7 @@ const businessTime = (
           break;
         } else if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
           diff += end.diff(from, 'minutes');
-        } 
+        }
       }
 
       return diff ? diff * multiplier : 0;
