@@ -16,7 +16,6 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 const { dd } = require('./utils');
 
-// init
 dayjs.extend(customParseFormat);
 
 const DAYS_OF_WEEK = [
@@ -115,16 +114,29 @@ const businessTime = (
         ...oldBusinessTime,
         ...businessHours,
       };
-      updateLocale({ businessHours: newBusinessTime });
+
+      // filter jam, jika overlap maka gabungkan, jika start lebih besar dari end maka hapus jam kerja tsb
+      const newBusinessTimeFiltered: BusinessHoursMap = {} as BusinessHoursMap;
+      for (const day in newBusinessTime) {
+        const value = newBusinessTime[day];
+        const hours = value ? mergeOverlappingIntervals(value) : null;
+        newBusinessTimeFiltered[day] = hours && hours.length > 0 ? hours : null;
+      }
+
+      updateLocale({ businessHours: newBusinessTimeFiltered });
     } else if (type == 'replace') {
       const newBusinessTime = DAYS_OF_WEEK.reduce((acc, day) => {
         if (businessHours.hasOwnProperty(day)) {
-          acc[day] = businessHours[day];
+          const hours = businessHours[day]
+            ? mergeOverlappingIntervals(businessHours[day])
+            : null;
+          acc[day] = hours && hours.length > 0 ? hours : null;
         } else {
           acc[day] = null;
         }
         return acc;
       }, {});
+
       updateLocale({ businessHours: newBusinessTime });
     }
   }
@@ -146,7 +158,7 @@ const businessTime = (
    * @returns
    */
   function getExceptionByDate(date: string): BusinessHours[] {
-    const exceptions = this.getExceptions();
+    const exceptions = getExceptions();
     return exceptions.hasOwnProperty(date) ? exceptions[date] : null;
   }
 
@@ -167,12 +179,13 @@ const businessTime = (
         if (!dayjs(date, DateFormat.date).isValid()) {
           return acc;
         }
-        
-        if (hours === null || hours.length === 0) {
+
+        const validHours = hours ? mergeOverlappingIntervals(hours) : null;
+
+        if (validHours === null || validHours.length === 0) {
           acc.holidays.push(date);
         } else {
-          holidays;
-          acc.filterExceptions[date] = hours;
+          acc.filterExceptions[date] = validHours;
         }
         return acc;
       },
@@ -199,8 +212,8 @@ const businessTime = (
     return holidays.includes(today);
   }
 
-  function isExceptions(): boolean {
-    const today = this.format(DateFormat.date);
+  function isExceptions(date?: string): boolean {
+    const today = date ? date : this.format(DateFormat.date);
     const exceptions = getExceptions();
 
     return !!(exceptions.hasOwnProperty(today)
@@ -213,7 +226,7 @@ const businessTime = (
     const dayName = DaysNames[this.day()];
     const isDefaultWorkingDay = !!businessHours[dayName];
 
-    return isDefaultWorkingDay && !this.isHoliday();
+    return (isDefaultWorkingDay || this.isExceptions()) && !this.isHoliday();
   }
 
   function addOrsubtractBusinessDays(
@@ -269,8 +282,10 @@ const businessTime = (
     let date = day.clone();
 
     const dayName = DaysNames[date.day()];
-
-    const businessHours = getBusinessTime()[dayName];
+    const _date = date.format(DateFormat.date);
+    const businessHours = isExceptions(_date)
+      ? getExceptionByDate(_date)
+      : getBusinessTime()[dayName];
 
     return businessHours.reduce((segments, businessTime, index) => {
       let { start, end } = businessTime;
@@ -283,7 +298,6 @@ const businessTime = (
 
   function getCurrentBusinessTimeSegment(date) {
     const businessSegments = getBusinessTimeSegments(date);
-
     if (!businessSegments?.length) {
       return false;
     }
@@ -357,6 +371,10 @@ const businessTime = (
     }
   }
 
+  function addBusinessSeconds(secondsToAdd: number): Dayjs {
+    return addOrSubtractBusinessSeconds(this, secondsToAdd);
+  }
+
   function addBusinessMinutes(minutesToAdd: number): Dayjs {
     return addOrSubtractBusinessMinutes(this, minutesToAdd);
   }
@@ -367,6 +385,10 @@ const businessTime = (
   }
 
   function addBusinessTime(timeToAdd: number, businessUnit: BusinessUnitType) {
+    if (businessUnit.match(/^(second)+s?$/)) {
+      return this.addBusinessSeconds(timeToAdd);
+    }
+
     if (businessUnit.match(/^(minute)+s?$/)) {
       return this.addBusinessMinutes(timeToAdd);
     }
@@ -419,6 +441,47 @@ const businessTime = (
       }
 
       date = date[action](timeToJump, 'minute');
+    }
+
+    return date;
+  }
+
+  function addOrSubtractBusinessSeconds(
+    day: Dayjs,
+    numberOfSeconds: number,
+    action: 'add' | 'subtract' = 'add',
+  ): Dayjs {
+    let date =
+      action === 'add' ? day.nextBusinessTime() : day.lastBusinessTime();
+    while (numberOfSeconds) {
+      const segment = getCurrentBusinessTimeSegment(
+        date,
+      ) as BusinessTimeSegment;
+
+      if (!segment) {
+        date =
+          action === 'add' ? date.nextBusinessTime() : date.lastBusinessTime();
+        continue;
+      }
+
+      const { start, end } = segment;
+
+      const compareBaseDate = action === 'add' ? end : date;
+      const compareDate = action === 'add' ? date : start;
+
+      let timeToJump = compareBaseDate.diff(compareDate, 'second');
+
+      if (timeToJump > numberOfSeconds) {
+        timeToJump = numberOfSeconds;
+      }
+
+      numberOfSeconds -= timeToJump;
+
+      if (!timeToJump && numberOfSeconds) {
+        timeToJump = 1;
+      }
+
+      date = date[action](timeToJump, 'second');
     }
 
     return date;
@@ -582,6 +645,35 @@ const businessTime = (
       }, {});
   }
 
+  function mergeOverlappingIntervals(array: BusinessHours[]): BusinessHours[] {
+    // Sort the array by the start time
+    const sortedArray = array.sort((a, b) => a.start.localeCompare(b.start));
+
+    // Initialize the result array
+    const result = [];
+
+    for (let i = 0; i < sortedArray.length; i++) {
+      const currentInterval = sortedArray[i];
+
+      // If the start time is greater than the end time, skip this interval
+      if (currentInterval.start > currentInterval.end) {
+        continue;
+      }
+
+      const lastInterval = result[result.length - 1];
+
+      if (result.length === 0 || currentInterval.start > lastInterval.end) {
+        // If the current interval does not overlap, add it to the result array
+        result.push(currentInterval);
+      } else if (currentInterval.end > lastInterval.end) {
+        // If the current interval overlaps with the last interval, merge them
+        lastInterval.end = currentInterval.end;
+      }
+    }
+
+    return result as BusinessHours[];
+  }
+
   // New functions on dayjs factory
   dayjsFactory.getHolidays = getHolidays;
   dayjsFactory.getHolidayByDate = getHolidayByDate;
@@ -593,18 +685,19 @@ const businessTime = (
   dayjsFactory.getExceptionByDate = getExceptionByDate;
 
   // New methods on Dayjs class
-  DayjsClass.prototype.isHoliday = isHoliday;
-  DayjsClass.prototype.isBusinessDay = isBusinessDay;
-  DayjsClass.prototype.nextBusinessDay = nextBusinessDay;
-  DayjsClass.prototype.lastBusinessDay = lastBusinessDay;
-  DayjsClass.prototype.addBusinessDays = addBusinessDays;
-  DayjsClass.prototype.subtractBusinessDays = subtractBusinessDays;
-  DayjsClass.prototype.isBusinessTime = isBusinessTime;
-  DayjsClass.prototype.nextBusinessTime = nextBusinessTime;
-  DayjsClass.prototype.lastBusinessTime = lastBusinessTime;
-  DayjsClass.prototype.addBusinessTime = addBusinessTime;
+  DayjsClass.prototype.isHoliday = isHoliday; // done
+  DayjsClass.prototype.isBusinessDay = isBusinessDay; // done
+  DayjsClass.prototype.nextBusinessDay = nextBusinessDay; // done
+  DayjsClass.prototype.lastBusinessDay = lastBusinessDay; // done
+  DayjsClass.prototype.addBusinessDays = addBusinessDays; // done
+  DayjsClass.prototype.subtractBusinessDays = subtractBusinessDays; // done
+  DayjsClass.prototype.isBusinessTime = isBusinessTime; // done
+  DayjsClass.prototype.nextBusinessTime = nextBusinessTime; // done
+  DayjsClass.prototype.lastBusinessTime = lastBusinessTime; // done
+  DayjsClass.prototype.addBusinessTime = addBusinessTime; //done
   DayjsClass.prototype.addBusinessHours = addBusinessHours;
   DayjsClass.prototype.addBusinessMinutes = addBusinessMinutes;
+  DayjsClass.prototype.addBusinessSeconds = addBusinessSeconds;
   DayjsClass.prototype.subtractBusinessMinutes = subtractBusinessMinutes;
   DayjsClass.prototype.subtractBusinessHours = subtractBusinessHours;
   DayjsClass.prototype.subtractBusinessTime = subtractBusinessTime;
