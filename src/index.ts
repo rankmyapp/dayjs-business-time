@@ -7,17 +7,32 @@ import dayjs, {
   BusinessTimeSegment,
   BusinessUnitType,
   Dayjs,
+  BusinessTimeExceptions,
+  BusinessHours,
+  UpdateLocaleType,
+  PartBusinessHoursMap,
 } from 'dayjs';
 
-const DEFAULT_WORKING_HOURS = {
-  sunday: null,
-  monday: [{ start: '08:00:00', end: '17:00:00' }],
-  tuesday: [{ start: '08:00:00', end: '17:00:00' }],
-  wednesday: [{ start: '08:00:00', end: '17:00:00' }],
-  thursday: [{ start: '08:00:00', end: '17:00:00' }],
-  friday: [{ start: '08:00:00', end: '17:00:00' }],
-  saturday: null,
-};
+const { dd } = require('./utils');
+
+const DAYS_OF_WEEK = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+];
+
+const DEFAULT_WORKING_HOURS = DAYS_OF_WEEK.reduce((acc, day) => {
+  if (day === 'saturday' || day === 'sunday') {
+    acc[day] = null;
+  } else {
+    acc[day] = [{ start: '09:00:00', end: '17:00:00' }];
+  }
+  return acc;
+}, {});
 
 enum DaysNames {
   sunday = 0,
@@ -27,6 +42,12 @@ enum DaysNames {
   thursday = 4,
   friday = 5,
   saturday = 6,
+}
+
+enum DateFormat {
+  date = 'YYYY-MM-DD',
+  time = 'HH:mm:ss',
+  datetime = 'YYYY-MM-DD HH:mm:ss',
 }
 
 const businessTime = (
@@ -46,7 +67,7 @@ const businessTime = (
     return dayjsFactory.Ls[dayjs().locale()];
   }
 
-  function updateLocale(newData) {
+  function updateLocale(newData: Object) {
     dayjsFactory.updateLocale(dayjs().locale(), { ...newData });
   }
 
@@ -62,8 +83,61 @@ const businessTime = (
     return getLocale().businessHours;
   }
 
-  function setBusinessTime(businessHours: BusinessHoursMap) {
-    updateLocale({ businessHours });
+  function setBusinessTime(
+    businessHours: PartBusinessHoursMap,
+    type: UpdateLocaleType = 'replace',
+  ) {
+    if (type == 'add') {
+      const oldBusinessTime: BusinessHoursMap = getBusinessTime();
+      const newBusinessTime: BusinessHoursMap = {
+        ...oldBusinessTime,
+        ...businessHours,
+      };
+      updateLocale({ businessHours: newBusinessTime });
+    } else if (type == 'replace') {
+      const newBusinessTime = DAYS_OF_WEEK.reduce((acc, day) => {
+        if (businessHours.hasOwnProperty(day)) {
+          acc[day] = businessHours[day];
+        } else {
+          acc[day] = null;
+        }
+        return acc;
+      }, {});
+      updateLocale({ businessHours: newBusinessTime });
+    }
+  }
+
+  /**
+   * get all exceptions
+   */
+  function getExceptions(): BusinessTimeExceptions {
+    return getLocale().exceptions;
+  }
+
+  /**
+   * get exception by date
+   * @param date "string YYYY-MM-DD"
+   * @returns
+   */
+  function getExceptionByDate(date: string): BusinessHours[] | null {
+    const exceptions = this.getExceptions();
+    return exceptions.hasOwnProperty(date) ? exceptions[date] : null;
+  }
+
+  function setExceptions(
+    exceptions: BusinessTimeExceptions | null,
+    type: UpdateLocaleType = 'replace',
+  ) {
+    if (type == 'add') {
+      const oldExceptions: BusinessTimeExceptions = getExceptions();
+      const newExceptions: BusinessTimeExceptions = {
+        ...oldExceptions,
+        ...exceptions,
+      };
+      updateLocale({ exceptions: newExceptions });
+    } else if (type == 'replace') {
+      updateLocale({ exceptions });
+    }
   }
 
   function isHoliday() {
@@ -71,6 +145,15 @@ const businessTime = (
     const holidays = getHolidays();
 
     return holidays.includes(today);
+  }
+
+  function isExceptions(): boolean {
+    const today = this.format(DateFormat.date);
+    const exceptions = getExceptions();
+
+    return !!(exceptions.hasOwnProperty(today)
+      ? exceptions[today] || null
+      : null);
   }
 
   function isBusinessDay() {
@@ -171,6 +254,8 @@ const businessTime = (
 
     const segments = getBusinessTimeSegments(this);
 
+    // dd('dd', segments.length);
+
     for (let index = 0; index < segments.length; index++) {
       const { start, end } = segments[index];
       const isLastSegment = index === segments.length - 1;
@@ -223,6 +308,7 @@ const businessTime = (
   }
 
   function addBusinessMinutes(minutesToAdd: number): Dayjs {
+    dd(this.format('YYYY-MM-DD HH:mm:ss'));
     return addOrSubtractBusinessMinutes(this, minutesToAdd);
   }
 
@@ -441,6 +527,9 @@ const businessTime = (
   dayjsFactory.setHolidays = setHolidays;
   dayjsFactory.getBusinessTime = getBusinessTime;
   dayjsFactory.setBusinessTime = setBusinessTime;
+  dayjsFactory.getExceptions = getExceptions;
+  dayjsFactory.setExceptions = setExceptions;
+  dayjsFactory.getExceptionByDate = getExceptionByDate;
 
   // New methods on Dayjs class
   DayjsClass.prototype.isHoliday = isHoliday;
@@ -462,6 +551,7 @@ const businessTime = (
   DayjsClass.prototype.businessHoursDiff = businessHoursDiff;
   DayjsClass.prototype.businessDaysDiff = businessDaysDiff;
   DayjsClass.prototype.businessTimeDiff = businessTimeDiff;
+  DayjsClass.prototype.isExceptions = isExceptions;
 };
 
 export default businessTime;
