@@ -5,12 +5,13 @@ export = plugin;
 
 declare module 'dayjs' {
   export function getHolidays(): string[];
-  export function setHolidays(holidays: string[]): void;
+  export function getHolidayByDate(date: string): boolean;
+  export function setHolidays(holidays: string[], type?: UpdateLocaleType): void;
   export function getBusinessTime(): BusinessHoursMap;
   export function setBusinessTime(businessHours: PartBusinessHoursMap, type: UpdateLocaleType): void;
-  export function getExceptions(): BusinessTimeExceptions;
+  export function getExceptions(sort?: boolean): BusinessTimeExceptions;
   export function setExceptions(
-    exceptions: BusinessTimeExceptions | {},
+    exceptions: BusinessTimeExceptions,
     type? : UpdateLocaleType
   ): void;
   export function getExceptionByDate(date: string): BusinessHours[] | null;

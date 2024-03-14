@@ -61,7 +61,6 @@ const businessTime = (
   dayjsFactory.extend(IsSameOrAfter);
 
   setBusinessTime(DEFAULT_WORKING_HOURS);
-  setHolidays([]);
 
   function getLocale() {
     return dayjsFactory.Ls[dayjs().locale()];
@@ -75,8 +74,21 @@ const businessTime = (
     return getLocale().holidays || [];
   }
 
-  function setHolidays(holidays) {
-    updateLocale({ holidays });
+  function getHolidayByDate(date: string): boolean {
+    const holidays = getHolidays();
+    return holidays.includes(date);
+  }
+
+  function setHolidays(holidays: string[], type: UpdateLocaleType = 'replace') {
+    if (type == 'add') {
+      const newHolidays = [...getHolidays(), ...holidays]
+        .filter((date, index, self) => self.indexOf(date) === index)
+        .sort();
+      updateLocale({ holidays: newHolidays });
+    } else if (type == 'replace') {
+      const newHolidays = holidays.sort();
+      updateLocale({ holidays: newHolidays });
+    }
   }
 
   function getBusinessTime(): BusinessHoursMap {
@@ -110,8 +122,12 @@ const businessTime = (
   /**
    * get all exceptions
    */
-  function getExceptions(): BusinessTimeExceptions {
-    return getLocale().exceptions;
+  function getExceptions(sort: boolean = false): BusinessTimeExceptions {
+    const exceptions = getLocale().exceptions;
+    if (sort == true && exceptions && typeof exceptions == 'object') {
+      return sortedObj(exceptions) as BusinessTimeExceptions;
+    }
+    return exceptions;
   }
 
   /**
@@ -119,24 +135,45 @@ const businessTime = (
    * @param date "string YYYY-MM-DD"
    * @returns
    */
-  function getExceptionByDate(date: string): BusinessHours[] | null {
+  function getExceptionByDate(date: string): BusinessHours[] {
     const exceptions = this.getExceptions();
     return exceptions.hasOwnProperty(date) ? exceptions[date] : null;
   }
 
   function setExceptions(
-    exceptions: BusinessTimeExceptions | null,
+    exceptions: BusinessTimeExceptions,
     type: UpdateLocaleType = 'replace',
   ) {
+    // jika value date = [] | null, maka date akan ditambahkan ke holiday karena tidak ada jam kerja.
+    const {
+      holidays,
+      filterExceptions,
+    }: {
+      holidays: string[];
+      filterExceptions: BusinessTimeExceptions;
+    } = Object.entries(exceptions).reduce(
+      (acc, [date, hours]) => {
+        if (hours === null || hours.length === 0) {
+          acc.holidays.push(date);
+        } else {
+          holidays;
+          acc.filterExceptions[date] = hours;
+        }
+        return acc;
+      },
+      { filterExceptions: {}, holidays: [] },
+    );
+    setHolidays(holidays, 'add');
+
     if (type == 'add') {
       const oldExceptions: BusinessTimeExceptions = getExceptions();
       const newExceptions: BusinessTimeExceptions = {
         ...oldExceptions,
-        ...exceptions,
+        ...filterExceptions,
       };
       updateLocale({ exceptions: newExceptions });
     } else if (type == 'replace') {
-      updateLocale({ exceptions });
+      updateLocale({ exceptions: filterExceptions });
     }
   }
 
@@ -254,8 +291,6 @@ const businessTime = (
 
     const segments = getBusinessTimeSegments(this);
 
-    // dd('dd', segments.length);
-
     for (let index = 0; index < segments.length; index++) {
       const { start, end } = segments[index];
       const isLastSegment = index === segments.length - 1;
@@ -308,7 +343,6 @@ const businessTime = (
   }
 
   function addBusinessMinutes(minutesToAdd: number): Dayjs {
-    dd(this.format('YYYY-MM-DD HH:mm:ss'));
     return addOrSubtractBusinessMinutes(this, minutesToAdd);
   }
 
@@ -522,8 +556,20 @@ const businessTime = (
     throw new Error('Invalid Business Time Unit');
   }
 
+  function sortedObj(obj: Object): Object {
+    if (Object.keys(obj).length <= 0) return obj;
+
+    return Object.keys(obj)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = obj[key];
+        return result;
+      }, {});
+  }
+
   // New functions on dayjs factory
   dayjsFactory.getHolidays = getHolidays;
+  dayjsFactory.getHolidayByDate = getHolidayByDate;
   dayjsFactory.setHolidays = setHolidays;
   dayjsFactory.getBusinessTime = getBusinessTime;
   dayjsFactory.setBusinessTime = setBusinessTime;
