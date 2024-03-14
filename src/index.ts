@@ -12,8 +12,12 @@ import dayjs, {
   UpdateLocaleType,
   PartBusinessHoursMap,
 } from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 const { dd } = require('./utils');
+
+// init
+dayjs.extend(customParseFormat);
 
 const DAYS_OF_WEEK = [
   'monday',
@@ -82,11 +86,17 @@ const businessTime = (
   function setHolidays(holidays: string[], type: UpdateLocaleType = 'replace') {
     if (type == 'add') {
       const newHolidays = [...getHolidays(), ...holidays]
-        .filter((date, index, self) => self.indexOf(date) === index)
+        .filter(
+          (date, index, self) =>
+            dayjs(date, DateFormat.date).isValid() &&
+            self.indexOf(date) === index,
+        )
         .sort();
       updateLocale({ holidays: newHolidays });
     } else if (type == 'replace') {
-      const newHolidays = holidays.sort();
+      const newHolidays = holidays
+        .filter((date) => dayjs(date, DateFormat.date).isValid())
+        .sort();
       updateLocale({ holidays: newHolidays });
     }
   }
@@ -153,6 +163,11 @@ const businessTime = (
       filterExceptions: BusinessTimeExceptions;
     } = Object.entries(exceptions).reduce(
       (acc, [date, hours]) => {
+        // Skip if the date is not valid
+        if (!dayjs(date, DateFormat.date).isValid()) {
+          return acc;
+        }
+        
         if (hours === null || hours.length === 0) {
           acc.holidays.push(date);
         } else {
