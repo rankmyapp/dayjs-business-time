@@ -6,15 +6,23 @@ export = plugin;
 declare module 'dayjs' {
   export function getHolidays(): string[];
   export function getHolidayByDate(date: string): boolean;
-  export function setHolidays(holidays: string[], type?: UpdateLocaleType): void;
+  export function setHolidays(
+    holidays: string[],
+    type?: UpdateLocaleType,
+  ): void;
   export function getBusinessTime(): BusinessHoursMap;
-  export function setBusinessTime(businessHours: PartBusinessHoursMap, type: UpdateLocaleType): void;
+  export function setBusinessTime(
+    businessHours: PartBusinessHoursMap,
+    type?: UpdateLocaleType,
+  ): void;
   export function getExceptions(sort?: boolean): BusinessTimeExceptions;
   export function setExceptions(
     exceptions: BusinessTimeExceptions,
-    type? : UpdateLocaleType
+    type?: UpdateLocaleType,
   ): void;
   export function getExceptionByDate(date: string): BusinessHours[] | null;
+  export function getDayLimit(): number;
+  export function setDayLimit(day: number): void;
 
   export type BusinessUnitType =
     | 'minute'
@@ -22,7 +30,9 @@ declare module 'dayjs' {
     | 'hour'
     | 'hours'
     | 'day'
-    | 'days';
+    | 'days'
+    | 'second'
+    | 'seconds';
 
   export type UpdateLocaleType = 'add' | 'replace';
 
@@ -38,6 +48,7 @@ declare module 'dayjs' {
     subtractBusinessDays(numberOfDays: number): Dayjs;
     addBusinessHours(numberOfHours: number): Dayjs;
     addBusinessMinutes(numberOfMinutes: number): Dayjs;
+    addBusinessSeconds(numberOfSeconds: number): Dayjs;
     addBusinessTime(timeToAdd: number, businessUnit: BusinessUnitType): Dayjs;
     subtractBusinessMinutes(numberOfMinutes: number): Dayjs;
     subtractBusinessHours(numberOfHours: number): Dayjs;
@@ -82,9 +93,10 @@ declare module 'dayjs' {
   }
 
   export interface ILocale {
+    dayLimit: number;
     holidays: string[];
     businessHours: BusinessHoursMap;
-    exceptions: any;
+    exceptions: BusinessTimeExceptions;
   }
 
   export interface BusinessTimeExceptions {

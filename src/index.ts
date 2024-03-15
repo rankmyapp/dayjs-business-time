@@ -18,6 +18,8 @@ const { dd } = require('./utils');
 
 dayjs.extend(customParseFormat);
 
+const DEFAULT_DAY_LIMIT = 365;
+
 const DAYS_OF_WEEK = [
   'monday',
   'tuesday',
@@ -64,6 +66,7 @@ const businessTime = (
   dayjsFactory.extend(IsSameOrAfter);
 
   setBusinessTime(DEFAULT_WORKING_HOURS);
+  setDayLimit(DEFAULT_DAY_LIMIT);
 
   function getLocale() {
     return dayjsFactory.Ls[dayjs().locale()];
@@ -236,11 +239,18 @@ const businessTime = (
   ) {
     let daysToIterate = numberOfDays;
     let day = date.clone();
+    const dayLimit = getDayLimit() ?? DEFAULT_DAY_LIMIT;
+    let dayCount = 0;
 
     while (daysToIterate) {
       day = day[action](1, 'day');
       if (day.isBusinessDay()) {
         daysToIterate = daysToIterate - 1;
+      }
+      
+      dayCount++;
+      if(dayCount > dayLimit) {        
+        throwError(`Work hours not found in the ${action == 'add' ? 'next' : 'past'} ${dayLimit} days. Use the setDayLimit function to increase the day limit`, 'addOrsubtractBusinessDays');
       }
     }
 
@@ -674,6 +684,20 @@ const businessTime = (
     return result as BusinessHours[];
   }
 
+  function setDayLimit(day: number){
+    updateLocale({dayLimit : day});
+  }
+
+  function getDayLimit(){
+    return getLocale().dayLimit
+  }
+
+  function throwError(message: string, functionName: string) {
+    const error = new Error(`${message}. Error at ${functionName}().`);
+    // You can add more properties to the error object here if needed
+    throw error;
+  }
+
   // New functions on dayjs factory
   dayjsFactory.getHolidays = getHolidays;
   dayjsFactory.getHolidayByDate = getHolidayByDate;
@@ -683,6 +707,8 @@ const businessTime = (
   dayjsFactory.getExceptions = getExceptions;
   dayjsFactory.setExceptions = setExceptions;
   dayjsFactory.getExceptionByDate = getExceptionByDate;
+  dayjsFactory.setDayLimit = setDayLimit;
+  dayjsFactory.getDayLimit = getDayLimit;
 
   // New methods on Dayjs class
   DayjsClass.prototype.isHoliday = isHoliday; // done
@@ -695,9 +721,9 @@ const businessTime = (
   DayjsClass.prototype.nextBusinessTime = nextBusinessTime; // done
   DayjsClass.prototype.lastBusinessTime = lastBusinessTime; // done
   DayjsClass.prototype.addBusinessTime = addBusinessTime; //done
-  DayjsClass.prototype.addBusinessHours = addBusinessHours;
-  DayjsClass.prototype.addBusinessMinutes = addBusinessMinutes;
-  DayjsClass.prototype.addBusinessSeconds = addBusinessSeconds;
+  DayjsClass.prototype.addBusinessHours = addBusinessHours; // done
+  DayjsClass.prototype.addBusinessMinutes = addBusinessMinutes; // done
+  DayjsClass.prototype.addBusinessSeconds = addBusinessSeconds; // done
   DayjsClass.prototype.subtractBusinessMinutes = subtractBusinessMinutes;
   DayjsClass.prototype.subtractBusinessHours = subtractBusinessHours;
   DayjsClass.prototype.subtractBusinessTime = subtractBusinessTime;
