@@ -2,16 +2,7 @@ import UpdateLocale from 'dayjs/plugin/updateLocale';
 import LocaleData from 'dayjs/plugin/localeData';
 import IsSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import IsSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import dayjs, {
-  BusinessHoursMap,
-  BusinessTimeSegment,
-  BusinessUnitType,
-  Dayjs,
-  BusinessTimeExceptions,
-  BusinessHours,
-  UpdateLocaleType,
-  PartBusinessHoursMap,
-} from 'dayjs';
+import dayjs, { BusinessHoursMap, BusinessTimeSegment, BusinessUnitType, Dayjs, BusinessTimeExceptions, BusinessHours, UpdateLocaleType, PartBusinessHoursMap } from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 const { dd } = require('./utils');
@@ -20,15 +11,7 @@ dayjs.extend(customParseFormat);
 
 const DEFAULT_DAY_LIMIT = 365;
 
-const DAYS_OF_WEEK = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-];
+const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const DEFAULT_WORKING_HOURS = DAYS_OF_WEEK.reduce((acc, day) => {
   if (day === 'saturday' || day === 'sunday') {
@@ -55,15 +38,14 @@ enum DateFormat {
   datetime = 'YYYY-MM-DD HH:mm:ss',
 }
 
-const businessTime = (
-  option: any,
-  DayjsClass: typeof Dayjs,
-  dayjsFactory: typeof dayjs,
-) => {
+const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeof dayjs) => {
   dayjsFactory.extend(LocaleData);
   dayjsFactory.extend(UpdateLocale);
   dayjsFactory.extend(IsSameOrBefore);
   dayjsFactory.extend(IsSameOrAfter);
+
+  // private prop
+  let _dayLimit_ = false;
 
   setBusinessTime(DEFAULT_WORKING_HOURS);
   setDayLimit(DEFAULT_DAY_LIMIT);
@@ -89,18 +71,10 @@ const businessTime = (
 
   function setHolidays(holidays: string[], type: UpdateLocaleType = 'replace') {
     if (type == 'add') {
-      const newHolidays = [...getHolidays(), ...holidays]
-        .filter(
-          (date, index, self) =>
-            dayjs(date, DateFormat.date).isValid() &&
-            self.indexOf(date) === index,
-        )
-        .sort();
+      const newHolidays = [...getHolidays(), ...holidays].filter((date, index, self) => dayjs(date, DateFormat.date).isValid() && self.indexOf(date) === index).sort();
       updateLocale({ holidays: newHolidays });
     } else if (type == 'replace') {
-      const newHolidays = holidays
-        .filter((date) => dayjs(date, DateFormat.date).isValid())
-        .sort();
+      const newHolidays = holidays.filter((date) => dayjs(date, DateFormat.date).isValid()).sort();
       updateLocale({ holidays: newHolidays });
     }
   }
@@ -109,10 +83,7 @@ const businessTime = (
     return getLocale().businessHours;
   }
 
-  function setBusinessTime(
-    businessHours: PartBusinessHoursMap,
-    type: UpdateLocaleType = 'replace',
-  ) {
+  function setBusinessTime(businessHours: PartBusinessHoursMap, type: UpdateLocaleType = 'replace') {
     if (type == 'add') {
       const oldBusinessTime: BusinessHoursMap = getBusinessTime();
       const newBusinessTime: BusinessHoursMap = {
@@ -132,9 +103,7 @@ const businessTime = (
     } else if (type == 'replace') {
       const newBusinessTime = DAYS_OF_WEEK.reduce((acc, day) => {
         if (businessHours.hasOwnProperty(day)) {
-          const hours = businessHours[day]
-            ? mergeOverlappingIntervals(businessHours[day])
-            : null;
+          const hours = businessHours[day] ? mergeOverlappingIntervals(businessHours[day]) : null;
           acc[day] = hours && hours.length > 0 ? hours : null;
         } else {
           acc[day] = null;
@@ -167,10 +136,7 @@ const businessTime = (
     return exceptions && exceptions.hasOwnProperty(date) ? exceptions[date] : null;
   }
 
-  function setExceptions(
-    exceptions: BusinessTimeExceptions,
-    type: UpdateLocaleType = 'replace',
-  ) {
+  function setExceptions(exceptions: BusinessTimeExceptions, type: UpdateLocaleType = 'replace') {
     // jika value date = [] | null, maka date akan ditambahkan ke holiday karena tidak ada jam kerja.
     const {
       holidays,
@@ -221,9 +187,7 @@ const businessTime = (
     const today = date ? date : this.format(DateFormat.date);
     const exceptions = getExceptions();
 
-    return !!(exceptions && exceptions.hasOwnProperty(today)
-      ? exceptions[today] || null
-      : null);
+    return !!(exceptions && exceptions.hasOwnProperty(today) ? exceptions[today] || null : null);
   }
 
   function isBusinessDay() {
@@ -234,26 +198,45 @@ const businessTime = (
     return (isDefaultWorkingDay || this.isExceptions()) && !this.isHoliday();
   }
 
-  function addOrsubtractBusinessDays(
-    date: Dayjs,
-    numberOfDays: number,
-    action: 'add' | 'subtract' = 'add',
-  ) {
+  function addOrsubtractBusinessDays(date: Dayjs, numberOfDays: number, action: 'add' | 'subtract' = 'add') {
     let daysToIterate = numberOfDays;
     let day = date.clone();
-    const dayLimit = getDayLimit() ?? DEFAULT_DAY_LIMIT;
+
+    let dayLimit = getDayLimit() ?? DEFAULT_DAY_LIMIT;
     let dayCount = 0;
+
+    if (checkNoWorkDays(getBusinessTime())) {
+      const exceptions = getExceptions();
+      if (exceptions && Object.values(exceptions).flat().length > 0) {
+        const { min, max } = getMinMaxDates(exceptions);
+        const diff = dayjs(max).diff(min, 'days');
+        dayLimit = Math.max(dayLimit, diff);
+      }
+    }
 
     while (daysToIterate) {
       day = day[action](1, 'day');
       if (day.isBusinessDay()) {
         daysToIterate = daysToIterate - 1;
       }
-      
-      dayCount++;
-      if(dayCount > dayLimit) {        
-        throwError(`Work hours not found in the ${action == 'add' ? 'next' : 'past'} ${dayLimit} days. Use the setDayLimit function to increase the day limit`, 'addOrsubtractBusinessDays');
+
+      if (dayCount > dayLimit) {
+        // jika set limit, maka return day berdasarkan action
+        if (_dayLimit_) {
+          _dayLimit_ = false;
+          const _day_ = day[action](dayCount, 'days').startOf('day');
+          setExceptions(
+            {
+              [_day_.format(DateFormat.date)]: [{ start: '12:00:00', end: '12:00:00' }],
+            },
+            'add',
+          );
+          return _day_;
+        }
+
+        throw new Error(`No opening hours found in the ${action == 'add' ? 'next' : 'past'} ${dayLimit} days. Use setDayLimit() to increase day limit`);
       }
+      dayCount++;
     }
 
     return day;
@@ -276,15 +259,8 @@ const businessTime = (
   }
 
   function timeStringToDayJS(timeString: string, date: Dayjs = dayjs()) {
-    const [hours, minutes, seconds] = <number[]>(
-      (timeString.split(':') as unknown)
-    );
-    return date
-      .clone()
-      .hour(hours)
-      .minute(minutes)
-      .second(seconds)
-      .millisecond(0);
+    const [hours, minutes, seconds] = <number[]>(timeString.split(':') as unknown);
+    return date.clone().hour(hours).minute(minutes).second(seconds).millisecond(0);
   }
 
   function getBusinessTimeSegments(day: Dayjs): BusinessTimeSegment[] {
@@ -295,9 +271,7 @@ const businessTime = (
 
     const dayName = DaysNames[date.day()];
     const _date = date.format(DateFormat.date);
-    const businessHours = isExceptions(_date)
-      ? getExceptionByDate(_date)
-      : getBusinessTime()[dayName];
+    const businessHours = isExceptions(_date) ? getExceptionByDate(_date) : getBusinessTime()[dayName];
 
     return businessHours.reduce((segments, businessTime, index) => {
       let { start, end } = businessTime;
@@ -331,11 +305,9 @@ const businessTime = (
     }
 
     const segments = getBusinessTimeSegments(this);
-
     for (let index = 0; index < segments.length; index++) {
       const { start, end } = segments[index];
       const isLastSegment = index === segments.length - 1;
-
       if (this.isBefore(start)) {
         return start;
       }
@@ -416,22 +388,14 @@ const businessTime = (
     throw new Error('Invalid Business Time Unit');
   }
 
-  function addOrSubtractBusinessMinutes(
-    day: Dayjs,
-    numberOfMinutes: number,
-    action: 'add' | 'subtract' = 'add',
-  ): Dayjs {
-    let date =
-      action === 'add' ? day.nextBusinessTime() : day.lastBusinessTime();
+  function addOrSubtractBusinessMinutes(day: Dayjs, numberOfMinutes: number, action: 'add' | 'subtract' = 'add'): Dayjs {
+    let date = action === 'add' ? day.nextBusinessTime() : day.lastBusinessTime();
 
     while (numberOfMinutes) {
-      const segment = getCurrentBusinessTimeSegment(
-        date,
-      ) as BusinessTimeSegment;
+      const segment = getCurrentBusinessTimeSegment(date) as BusinessTimeSegment;
 
       if (!segment) {
-        date =
-          action === 'add' ? date.nextBusinessTime() : date.lastBusinessTime();
+        date = action === 'add' ? date.nextBusinessTime() : date.lastBusinessTime();
         continue;
       }
 
@@ -458,21 +422,13 @@ const businessTime = (
     return date;
   }
 
-  function addOrSubtractBusinessSeconds(
-    day: Dayjs,
-    numberOfSeconds: number,
-    action: 'add' | 'subtract' = 'add',
-  ): Dayjs {
-    let date =
-      action === 'add' ? day.nextBusinessTime() : day.lastBusinessTime();
+  function addOrSubtractBusinessSeconds(day: Dayjs, numberOfSeconds: number, action: 'add' | 'subtract' = 'add'): Dayjs {
+    let date = action === 'add' ? day.nextBusinessTime() : day.lastBusinessTime();
     while (numberOfSeconds) {
-      const segment = getCurrentBusinessTimeSegment(
-        date,
-      ) as BusinessTimeSegment;
+      const segment = getCurrentBusinessTimeSegment(date) as BusinessTimeSegment;
 
       if (!segment) {
-        date =
-          action === 'add' ? date.nextBusinessTime() : date.lastBusinessTime();
+        date = action === 'add' ? date.nextBusinessTime() : date.lastBusinessTime();
         continue;
       }
 
@@ -508,10 +464,7 @@ const businessTime = (
     return this.subtractBusinessMinutes(minutesToSubtract);
   }
 
-  function subtractBusinessTime(
-    timeToSubtract: number,
-    businessUnit: BusinessUnitType,
-  ) {
+  function subtractBusinessTime(timeToSubtract: number, businessUnit: BusinessUnitType) {
     if (businessUnit.match(/^(minute)+s?$/)) {
       return this.subtractBusinessMinutes(timeToSubtract);
     }
@@ -528,6 +481,7 @@ const businessTime = (
   }
 
   function fixDatesToCalculateDiff(base, comparator) {
+    _dayLimit_ = true;
     let from: Dayjs = base.clone();
     let to: Dayjs = comparator.clone();
     let multiplier = 1;
@@ -571,12 +525,7 @@ const businessTime = (
       for (const segment of fromSegments) {
         const { start, end } = segment;
 
-        if (
-          to.isSameOrAfter(start) &&
-          to.isSameOrBefore(end) &&
-          from.isSameOrAfter(start) &&
-          from.isSameOrBefore(end)
-        ) {
+        if (to.isSameOrAfter(start) && to.isSameOrBefore(end) && from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
           diff += to.diff(from, 'minutes');
           break;
         } else if (to.isSameOrAfter(start) && to.isSameOrBefore(end)) {
@@ -628,19 +577,14 @@ const businessTime = (
   function businessSecondsDiff(comparator: Dayjs): number {
     let { from, to, multiplier } = fixDatesToCalculateDiff(this, comparator);
     let diff = 0;
-  
+
     const isSameDayfromTo = from.isSame(to, 'day');
     if (isSameDayfromTo) {
       const fromSegments = getBusinessTimeSegments(from);
       for (const segment of fromSegments) {
         const { start, end } = segment;
-  
-        if (
-          to.isSameOrAfter(start) &&
-          to.isSameOrBefore(end) &&
-          from.isSameOrAfter(start) &&
-          from.isSameOrBefore(end)
-        ) {
+
+        if (to.isSameOrAfter(start) && to.isSameOrBefore(end) && from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
           diff += to.diff(from, 'seconds');
           break;
         } else if (to.isSameOrAfter(start) && to.isSameOrBefore(end)) {
@@ -650,21 +594,21 @@ const businessTime = (
           diff += end.diff(from, 'seconds');
         }
       }
-  
+
       return diff ? diff * multiplier : 0;
     }
-  
+
     let segments = getBusinessTimeSegments(from);
     for (const segment of segments) {
       const { start, end } = segment;
-  
+
       if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
         diff += end.diff(from, 'seconds');
       } else if (start.isSameOrAfter(from)) {
         diff += end.diff(start, 'seconds');
       }
     }
-  
+
     from = from.addBusinessDays(1);
     while (from.isBefore(to, 'day')) {
       segments = getBusinessTimeSegments(from);
@@ -672,10 +616,10 @@ const businessTime = (
         const { start, end } = segment;
         diff += end.diff(start, 'seconds');
       }
-  
+
       from = from.addBusinessDays(1);
     }
-  
+
     const toSegments = getBusinessTimeSegments(to);
     for (const segment of toSegments) {
       const { start, end } = segment;
@@ -685,7 +629,7 @@ const businessTime = (
         diff += end.diff(start, 'seconds');
       }
     }
-  
+
     return diff ? diff * multiplier : 0;
   }
 
@@ -754,18 +698,32 @@ const businessTime = (
     return result as BusinessHours[];
   }
 
-  function setDayLimit(day: number){
-    updateLocale({dayLimit : day});
+  function setDayLimit(day: number) {
+    updateLocale({ dayLimit: day });
   }
 
-  function getDayLimit(){
-    return getLocale().dayLimit
+  function getDayLimit() {
+    return getLocale().dayLimit;
   }
 
-  function throwError(message: string, functionName: string) {
-    const error = new Error(`${message}. Error at ${functionName}().`);
-    // You can add more properties to the error object here if needed
-    throw error;
+  function checkNoWorkDays(workDays: BusinessHoursMap): boolean {
+    for (const day in workDays) {
+      if (workDays[day] !== null) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function getMinMaxDates(obj: BusinessTimeExceptions): { min: string; max: string } {
+    const dates = Object.keys(obj);
+    const minDate = new Date(Math.min(...dates.map((date) => new Date(date).getTime())));
+    const maxDate = new Date(Math.max(...dates.map((date) => new Date(date).getTime())));
+
+   return {
+      min: minDate.toISOString().split('T')[0],
+      max: maxDate.toISOString().split('T')[0],
+    };
   }
 
   // New functions on dayjs factory
@@ -781,19 +739,19 @@ const businessTime = (
   dayjsFactory.getDayLimit = getDayLimit;
 
   // New methods on Dayjs class
-  DayjsClass.prototype.isHoliday = isHoliday; 
-  DayjsClass.prototype.isBusinessDay = isBusinessDay; 
-  DayjsClass.prototype.nextBusinessDay = nextBusinessDay; 
-  DayjsClass.prototype.lastBusinessDay = lastBusinessDay; 
-  DayjsClass.prototype.addBusinessDays = addBusinessDays; 
-  DayjsClass.prototype.subtractBusinessDays = subtractBusinessDays; 
-  DayjsClass.prototype.isBusinessTime = isBusinessTime; 
-  DayjsClass.prototype.nextBusinessTime = nextBusinessTime; 
-  DayjsClass.prototype.lastBusinessTime = lastBusinessTime; 
-  DayjsClass.prototype.addBusinessTime = addBusinessTime; 
-  DayjsClass.prototype.addBusinessHours = addBusinessHours; 
-  DayjsClass.prototype.addBusinessMinutes = addBusinessMinutes; 
-  DayjsClass.prototype.addBusinessSeconds = addBusinessSeconds; 
+  DayjsClass.prototype.isHoliday = isHoliday;
+  DayjsClass.prototype.isBusinessDay = isBusinessDay;
+  DayjsClass.prototype.nextBusinessDay = nextBusinessDay;
+  DayjsClass.prototype.lastBusinessDay = lastBusinessDay;
+  DayjsClass.prototype.addBusinessDays = addBusinessDays;
+  DayjsClass.prototype.subtractBusinessDays = subtractBusinessDays;
+  DayjsClass.prototype.isBusinessTime = isBusinessTime;
+  DayjsClass.prototype.nextBusinessTime = nextBusinessTime;
+  DayjsClass.prototype.lastBusinessTime = lastBusinessTime;
+  DayjsClass.prototype.addBusinessTime = addBusinessTime;
+  DayjsClass.prototype.addBusinessHours = addBusinessHours;
+  DayjsClass.prototype.addBusinessMinutes = addBusinessMinutes;
+  DayjsClass.prototype.addBusinessSeconds = addBusinessSeconds;
   DayjsClass.prototype.subtractBusinessMinutes = subtractBusinessMinutes;
   DayjsClass.prototype.subtractBusinessHours = subtractBusinessHours;
   DayjsClass.prototype.subtractBusinessTime = subtractBusinessTime;
