@@ -67,6 +67,8 @@ const businessTime = (
 
   setBusinessTime(DEFAULT_WORKING_HOURS);
   setDayLimit(DEFAULT_DAY_LIMIT);
+  setExceptions({});
+  setHolidays([]);
 
   function getLocale() {
     return dayjsFactory.Ls[dayjs().locale()];
@@ -162,7 +164,7 @@ const businessTime = (
    */
   function getExceptionByDate(date: string): BusinessHours[] {
     const exceptions = getExceptions();
-    return exceptions.hasOwnProperty(date) ? exceptions[date] : null;
+    return exceptions && exceptions.hasOwnProperty(date) ? exceptions[date] : null;
   }
 
   function setExceptions(
@@ -219,7 +221,7 @@ const businessTime = (
     const today = date ? date : this.format(DateFormat.date);
     const exceptions = getExceptions();
 
-    return !!(exceptions.hasOwnProperty(today)
+    return !!(exceptions && exceptions.hasOwnProperty(today)
       ? exceptions[today] || null
       : null);
   }
@@ -623,12 +625,80 @@ const businessTime = (
     return diff ? diff * multiplier : 0;
   }
 
+  function businessSecondsDiff(comparator: Dayjs): number {
+    let { from, to, multiplier } = fixDatesToCalculateDiff(this, comparator);
+    let diff = 0;
+  
+    const isSameDayfromTo = from.isSame(to, 'day');
+    if (isSameDayfromTo) {
+      const fromSegments = getBusinessTimeSegments(from);
+      for (const segment of fromSegments) {
+        const { start, end } = segment;
+  
+        if (
+          to.isSameOrAfter(start) &&
+          to.isSameOrBefore(end) &&
+          from.isSameOrAfter(start) &&
+          from.isSameOrBefore(end)
+        ) {
+          diff += to.diff(from, 'seconds');
+          break;
+        } else if (to.isSameOrAfter(start) && to.isSameOrBefore(end)) {
+          diff += to.diff(start, 'seconds');
+          break;
+        } else if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
+          diff += end.diff(from, 'seconds');
+        }
+      }
+  
+      return diff ? diff * multiplier : 0;
+    }
+  
+    let segments = getBusinessTimeSegments(from);
+    for (const segment of segments) {
+      const { start, end } = segment;
+  
+      if (from.isSameOrAfter(start) && from.isSameOrBefore(end)) {
+        diff += end.diff(from, 'seconds');
+      } else if (start.isSameOrAfter(from)) {
+        diff += end.diff(start, 'seconds');
+      }
+    }
+  
+    from = from.addBusinessDays(1);
+    while (from.isBefore(to, 'day')) {
+      segments = getBusinessTimeSegments(from);
+      for (const segment of segments) {
+        const { start, end } = segment;
+        diff += end.diff(start, 'seconds');
+      }
+  
+      from = from.addBusinessDays(1);
+    }
+  
+    const toSegments = getBusinessTimeSegments(to);
+    for (const segment of toSegments) {
+      const { start, end } = segment;
+      if (to.isSameOrAfter(start) && to.isSameOrBefore(end)) {
+        diff += to.diff(start, 'seconds');
+      } else if (end.isSameOrBefore(to)) {
+        diff += end.diff(start, 'seconds');
+      }
+    }
+  
+    return diff ? diff * multiplier : 0;
+  }
+
   function businessHoursDiff(comparator: Dayjs): number {
     const minutesDiff = this.businessMinutesDiff(comparator);
     return minutesDiff / 60;
   }
 
   function businessTimeDiff(comparator: Dayjs, businessUnit: BusinessUnitType) {
+    if (businessUnit.match(/^(second)+s?$/)) {
+      return this.businessSecondsDiff(comparator);
+    }
+
     if (businessUnit.match(/^(minute)+s?$/)) {
       return this.businessMinutesDiff(comparator);
     }
@@ -711,23 +781,24 @@ const businessTime = (
   dayjsFactory.getDayLimit = getDayLimit;
 
   // New methods on Dayjs class
-  DayjsClass.prototype.isHoliday = isHoliday; // done
-  DayjsClass.prototype.isBusinessDay = isBusinessDay; // done
-  DayjsClass.prototype.nextBusinessDay = nextBusinessDay; // done
-  DayjsClass.prototype.lastBusinessDay = lastBusinessDay; // done
-  DayjsClass.prototype.addBusinessDays = addBusinessDays; // done
-  DayjsClass.prototype.subtractBusinessDays = subtractBusinessDays; // done
-  DayjsClass.prototype.isBusinessTime = isBusinessTime; // done
-  DayjsClass.prototype.nextBusinessTime = nextBusinessTime; // done
-  DayjsClass.prototype.lastBusinessTime = lastBusinessTime; // done
-  DayjsClass.prototype.addBusinessTime = addBusinessTime; //done
-  DayjsClass.prototype.addBusinessHours = addBusinessHours; // done
-  DayjsClass.prototype.addBusinessMinutes = addBusinessMinutes; // done
-  DayjsClass.prototype.addBusinessSeconds = addBusinessSeconds; // done
+  DayjsClass.prototype.isHoliday = isHoliday; 
+  DayjsClass.prototype.isBusinessDay = isBusinessDay; 
+  DayjsClass.prototype.nextBusinessDay = nextBusinessDay; 
+  DayjsClass.prototype.lastBusinessDay = lastBusinessDay; 
+  DayjsClass.prototype.addBusinessDays = addBusinessDays; 
+  DayjsClass.prototype.subtractBusinessDays = subtractBusinessDays; 
+  DayjsClass.prototype.isBusinessTime = isBusinessTime; 
+  DayjsClass.prototype.nextBusinessTime = nextBusinessTime; 
+  DayjsClass.prototype.lastBusinessTime = lastBusinessTime; 
+  DayjsClass.prototype.addBusinessTime = addBusinessTime; 
+  DayjsClass.prototype.addBusinessHours = addBusinessHours; 
+  DayjsClass.prototype.addBusinessMinutes = addBusinessMinutes; 
+  DayjsClass.prototype.addBusinessSeconds = addBusinessSeconds; 
   DayjsClass.prototype.subtractBusinessMinutes = subtractBusinessMinutes;
   DayjsClass.prototype.subtractBusinessHours = subtractBusinessHours;
   DayjsClass.prototype.subtractBusinessTime = subtractBusinessTime;
   DayjsClass.prototype.businessMinutesDiff = businessMinutesDiff;
+  DayjsClass.prototype.businessSecondsDiff = businessSecondsDiff;
   DayjsClass.prototype.businessHoursDiff = businessHoursDiff;
   DayjsClass.prototype.businessDaysDiff = businessDaysDiff;
   DayjsClass.prototype.businessTimeDiff = businessTimeDiff;

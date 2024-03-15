@@ -57,6 +57,7 @@ declare module 'dayjs' {
       businessUnit: BusinessUnitType,
     ): Dayjs;
     businessMinutesDiff(comparator: Dayjs): number;
+    businessSecondsDiff(comparator: Dayjs): number;
     businessHoursDiff(comparator: Dayjs): number;
     businessDaysDiff(comparator: Dayjs): number;
     businessTimeDiff(comparator: Dayjs, businessUnit: BusinessUnitType): number;
