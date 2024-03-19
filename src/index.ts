@@ -5,8 +5,6 @@ import IsSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import dayjs, { BusinessHoursMap, BusinessTimeSegment, BusinessUnitType, Dayjs, BusinessTimeExceptions, BusinessHours, UpdateLocaleType, PartBusinessHoursMap } from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
-const { dd } = require('./utils');
-
 dayjs.extend(customParseFormat);
 
 const DEFAULT_DAY_LIMIT = 365;
