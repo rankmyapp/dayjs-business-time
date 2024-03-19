@@ -1,4 +1,8 @@
-# dayjs-business-time
+# dayjs-business-time-advanced
+
+<!-- ini adalah versi kembangan dari "dayjs-business-time" versi 1.0.4, jika anda ingin melihat versi yang asli anda dapat mengunjung link berikut "httpxxx" -->
+<!-- Apa yang baru ? diupdate terbaru ini saya menambahkan beberapa fitur dan mengubah sedikit bisnis prosesnya. -->
+What's new? In the latest update, I've added some features and made a few changes to the business process. This is the latest development of [dayjs-business-time](https://github.com/rankmyapp/dayjs-business-time) version 1.0.4.
 
 A [Day.js](https://github.com/iamkun/dayjs) plugin that allows you to work with Business Time.
 
@@ -7,7 +11,9 @@ A [Day.js](https://github.com/iamkun/dayjs) plugin that allows you to work with 
 * Business Minutes
 * Customize business days and hours
 * Customize Holidays to prevent them to be counted as Business Days
+* Customize Exceptions for more complex working days and hours.
 
+## [See more documentation]()
 
 # Getting Started
 
@@ -18,6 +24,8 @@ A [Day.js](https://github.com/iamkun/dayjs) plugin that allows you to work with 
   * [Getting Holidays](#getting-holidays)
   * [Setting Business Times](#setting-business-times)
   * [Getting Business Times](#getting-business-times)
+  * [Setting Exceptions](#setting-exceptions)
+  * [Getting Exceptions](#getting-exceptions)
 * [Checking](#checking)
   * [Check if a date is a Holiday](#check-if-a-date-is-a-holiday)
   * [Check if a date is a Business Day](#check-if-a-date-is-a-business-day)
@@ -139,6 +147,38 @@ const businessTimes: BusinessHoursMap = {
 
 // Set Business Times in dayjs
 dayjs.setBusinessTime(businessTimes);
+````
+
+### Getting Business Times
+````typescript
+const holidays: string[] = dayjs.setHolidays(holidays);
+
+console.log(holidays);
+// Output: ['2021-01-01', '2021-01-25', '2021-06-03']
+````
+
+### Setting Exceptions
+> By default, exceptions are empty!
+
+````typescript
+// Create your exception date 
+const exceptions: BusinessTimeExceptions = {
+  '2024-03-14' : [{start: "08:00:00", end: "17:00:00"}],
+  '2024-03-15' : [{start: "08:00:00", end: "12:00:00"}, {start:"14:00:00", end: "18:00:00"}],
+  '2024-03-16' : [], // "If empty, it will be added to the holiday."
+  '2024-03-17' : null, // "If null, it will be added to the holiday."
+};
+
+// Add exceptions 
+dayjs.setExceptions(exceptions);
+````
+
+### Getting Exceptions
+````typescript
+const exceptions: BusinessTimeExceptions = dayjs.setHolidays(holidays);
+
+console.log(holidays);
+// Output: ['2021-01-01', '2021-01-25', '2021-06-03']
 ````
 
 ## Checking
