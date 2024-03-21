@@ -1,7 +1,7 @@
 {
-  "name": "dayjs-business-time",
-  "version": "1.0.4",
-  "author": "Alexsander Lira",
+  "name": "dayjs-business-time-advanced",
+  "version": "2.0.0",
+  "author": "Edy Kurnia",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
   "license": "MIT",
@@ -10,22 +10,28 @@
     "date",
     "time",
     "business time",
+    "business time advanced",
     "business hours",
     "business days",
     "working time",
     "working hours",
     "working days",
-    "rankmyapp"
+    "advanced",
+    "rankmyapp",
+    "edai-git",
+    "edai",
+    "edai.js"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/rankmyapp/dayjs-business-time.git"
+    "url": "https://github.com/edai-git/dayjs-business-time.git"
   },
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
     "build": "rm -rf dist && tsc",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "prepublish": "tsc"
   },
   "dependencies": {
     "dayjs": "^1.10.4"
