@@ -30,7 +30,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "build": "rm -rf dist && tsc",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "prepublish": "tsc"
   },
   "dependencies": {
     "dayjs": "^1.10.4"
