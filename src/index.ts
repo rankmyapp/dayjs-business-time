@@ -2,7 +2,7 @@ import UpdateLocale from 'dayjs/plugin/updateLocale';
 import LocaleData from 'dayjs/plugin/localeData';
 import IsSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import IsSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import dayjs, { BusinessHoursMap, BusinessTimeSegment, BusinessUnitType, Dayjs, BusinessTimeExceptions, BusinessHours, UpdateLocaleType, PartBusinessHoursMap } from 'dayjs';
+import dayjs, { BusinessHoursMap, BusinessTimeSegment, BusinessUnitType, Dayjs, BusinessTimeExceptions, BusinessHours, UpdateLocaleType, PartBusinessHoursMap, TemplateBusinessTime } from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 dayjs.extend(customParseFormat);
@@ -172,6 +172,14 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
     } else if (type == 'replace') {
       updateLocale({ exceptions: filterExceptions });
     }
+  }
+
+  function getCurrentTemplate() : TemplateBusinessTime {
+    return {
+      businessTimes : getBusinessTime(),
+      holidays : getHolidays(),
+      exceptions : getExceptions()
+    } as TemplateBusinessTime;
   }
 
   function isHoliday() {
@@ -735,6 +743,7 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
   dayjsFactory.getExceptionByDate = getExceptionByDate;
   dayjsFactory.setDayLimit = setDayLimit;
   dayjsFactory.getDayLimit = getDayLimit;
+  dayjsFactory.getCurrentTemplate = getCurrentTemplate;
 
   // New methods on Dayjs class
   DayjsClass.prototype.isHoliday = isHoliday;

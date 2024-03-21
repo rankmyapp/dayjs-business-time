@@ -23,7 +23,7 @@ declare module 'dayjs' {
   export function getExceptionByDate(date: string): BusinessHours[] | null;
   export function getDayLimit(): number;
   export function setDayLimit(day: number): void;
-
+  export function getCurrentTemplate() : TemplateBusinessTime;
   export type BusinessUnitType =
     | 'minute'
     | 'minutes'
@@ -103,4 +103,11 @@ declare module 'dayjs' {
   export interface BusinessTimeExceptions {
     [date: string]: BusinessHours[] | null;
   }
+
+  export interface TemplateBusinessTime {
+    businessTimes : BusinessHoursMap,
+    holidays : string[],
+    exceptions : BusinessTimeExceptions
+  }
+
 }
