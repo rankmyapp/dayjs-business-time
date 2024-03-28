@@ -4,7 +4,7 @@ import IsSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import IsSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import dayjs, { BusinessHoursMap, BusinessTimeSegment, BusinessUnitType, Dayjs, BusinessTimeExceptions, BusinessHours, UpdateLocaleType, PartBusinessHoursMap, TemplateBusinessTime } from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
-import dd from '@edaijs/dumpndie';
+import {dd} from "dumpndie-nodejs";
 
 dayjs.extend(customParseFormat);
 
