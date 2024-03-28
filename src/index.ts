@@ -174,11 +174,11 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
     }
   }
 
-  function getCurrentTemplate() : TemplateBusinessTime {
+  function getCurrentTemplate(): TemplateBusinessTime {
     return {
-      businessTimes : getBusinessTime(),
-      holidays : getHolidays(),
-      exceptions : getExceptions()
+      businessTimes: getBusinessTime(),
+      holidays: getHolidays(),
+      exceptions: getExceptions(),
     } as TemplateBusinessTime;
   }
 
@@ -677,31 +677,59 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
 
   function mergeOverlappingIntervals(array: BusinessHours[]): BusinessHours[] {
     // Sort the array by the start time
-    const sortedArray = array.sort((a, b) => a.start.localeCompare(b.start));
+    const sortedArray = array.sort((a, b) => (convertTimeToDatetime(a.start).isAfter(convertTimeToDatetime(b.start)) ? 1 : -1));
 
     // Initialize the result array
     const result = [];
 
     for (let i = 0; i < sortedArray.length; i++) {
       const currentInterval = sortedArray[i];
+      const start = convertTimeToDatetime(currentInterval.start);
+      const end = convertTimeToDatetime(currentInterval.end);
+      const endOfDay = convertTimeToDatetime("24:00:00");
 
       // If the start time is greater than the end time, skip this interval
-      if (currentInterval.start > currentInterval.end) {
+      if (start.isAfter(end, 'second')) {
         continue;
       }
 
-      const lastInterval = result[result.length - 1];
+      // If the start time is greater than eq the end of day, skip this interval
+      if(start.isSameOrAfter(endOfDay, 'second')){
+        continue;
+      }
 
-      if (result.length === 0 || currentInterval.start > lastInterval.end) {
+      // custom start
+      // if end >= endofday, set end to 24:00:00
+      currentInterval.start = start.format(DateFormat.time);
+      if(end.isSameOrAfter(endOfDay, 'second')){
+        currentInterval.end = "24:00:00";
+      }else{
+        currentInterval.end = end.format(DateFormat.time);
+      }
+
+      const lastInterval = result[result.length - 1];
+      let lastEnd = null;
+      if(lastInterval && lastInterval?.end){
+        lastEnd = convertTimeToDatetime(lastInterval.end)
+      }
+
+      if (result.length === 0 || (lastEnd && start.isAfter(lastEnd, 'second'))) {
         // If the current interval does not overlap, add it to the result array
         result.push(currentInterval);
-      } else if (currentInterval.end > lastInterval.end) {
+      } else if (lastEnd && end.isAfter(lastEnd, 'second')) {
         // If the current interval overlaps with the last interval, merge them
         lastInterval.end = currentInterval.end;
       }
     }
-
+    
     return result as BusinessHours[];
+  }
+
+  function convertTimeToDatetime(time: string) {
+    let now = dayjs();
+    let dateTime = now.format('YYYY-MM-DD') + 'T' + time;
+    let date = dayjs(dateTime);
+    return date;
   }
 
   function setDayLimit(day: number) {
@@ -726,7 +754,7 @@ const businessTime = (option: any, DayjsClass: typeof Dayjs, dayjsFactory: typeo
     const minDate = new Date(Math.min(...dates.map((date) => new Date(date).getTime())));
     const maxDate = new Date(Math.max(...dates.map((date) => new Date(date).getTime())));
 
-   return {
+    return {
       min: minDate.toISOString().split('T')[0],
       max: maxDate.toISOString().split('T')[0],
     };
