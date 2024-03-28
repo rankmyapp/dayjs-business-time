@@ -1225,6 +1225,11 @@ domexception@^2.0.1:
   dependencies:
     webidl-conversions "^5.0.0"
 
+dumpndie-nodejs@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/dumpndie-nodejs/-/dumpndie-nodejs-1.1.1.tgz#20b3d92ed674d54cfe44dcbac5c3ae0da89d9fff"
+  integrity sha512-xOyk9vPiUHhqYHq/1zxKTx49NJKKg5HjcKLIofBR0nFNUHmtjamy/5SiFwfdVpIXP4KP/h5ZEBWBQ+Hj6jT7XQ==
+
 ecc-jsbn@~0.1.1:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/ecc-jsbn/-/ecc-jsbn-0.1.2.tgz#3a83a904e54353287874c564b7549386849a98c9"
